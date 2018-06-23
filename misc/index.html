@@ -1,0 +1,70 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+
+    <script type="text/javascript">
+
+        let ws;
+        let output;
+        let button;
+
+        function init() {
+            output = document.getElementById("data_output");
+            button = document.getElementById("button");
+        }
+
+        function startConnection()
+        {   
+            try {
+                ws = new WebSocket("ws://localhost:3000/websocket");
+            } catch (e) {
+                alert(e.message)
+            }
+            
+            ws.onopen = function()
+            {
+                ws.send(JSON.stringify({"origin": "client", "type": "init"}));
+                console.log("Connected to Controller");
+                setButtonDisconnect();
+            };
+
+            ws.onmessage = function (evt) {
+                console.log("Recieved Data");
+                let data = JSON.parse(evt.data);
+                console.log(data);
+                if (data["type"] == "ack") {
+                    console.log("Server ack-ed connection, aka good to go")
+                    return
+                }
+
+            };
+
+            ws.onclose = function()
+            {
+                setButtonConnect();
+                console.log("Disconnected from Controller");
+            };
+        }
+
+        function closeConnection() {
+            ws.close();
+        }
+
+        function setButtonConnect() {
+            button.innerHTML = "Connect to Controller";
+            button.onclick = "startConnection()"
+        }
+
+        function setButtonDisconnect() {
+            button.innerHTML = "Disconnect from Controller";
+            button.onclick = "closeConnection()"
+        }
+
+    </script>
+
+</head>
+<body onload="init()">
+<button onclick="startConnection()" id="button">Connect to Controller</button>
+<p id="data_output">Nothing here</p>
+</body>
+</html>
