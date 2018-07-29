@@ -19,4 +19,4 @@ template = {
 }
 
 with open(f"workers\{name}.json", "w") as file:
-    file.write(json.dumps(template))
+    file.write(json.dumps(template, indent=4, separators=(',', ':')))
