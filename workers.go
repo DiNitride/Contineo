@@ -52,11 +52,13 @@ func ConnectNode(conn *websocket.Conn, data map[string]interface{}) {
 				return
 			} else {
 				Workers[nodeID].Conn = conn
+				Workers[nodeID].Data = make(map[string]interface{})
 
 				resp := map[string]interface{}{
 					"origin": "controller",
 					"type": "ack",
 				}
+
 				jsonData, err := json.Marshal(resp);
 				if err != nil {
 					fmt.Printf("Error registering worker %v\n", conn.RemoteAddr())

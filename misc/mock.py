@@ -4,7 +4,7 @@ import random
 import string
 import json
 
-key = "5eda2e3afed846d0905cd4c180919b75"
+key = "37826b43ee654151b982164501a1cd60"
 
 data = {
     "latency": 0,
@@ -32,7 +32,8 @@ async def main():
     }))
 
     # Wait for response
-    resp = await ws.read()
+    print("waiting for resp")
+    resp = await ws.recv()
     print(resp)
 
     # Send updates

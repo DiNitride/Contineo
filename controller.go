@@ -24,6 +24,14 @@ func main() {
 }
 
 func handleConnection(w http.ResponseWriter, r *http.Request) {
+
+	// First, handle authorisation
+	token_type := r.Header.Get("token_type")
+	token := r.Header.Get("token")
+
+
+
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		fmt.Println(err)
