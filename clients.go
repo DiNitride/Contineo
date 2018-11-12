@@ -3,7 +3,7 @@ package main
 import "github.com/gorilla/websocket"
 
 type Client struct {
-	token string
+	connection *websocket.Conn
+	clientID string
+	accessToken string
 }
-
-var Clients = map[*websocket.Conn]Client{}
