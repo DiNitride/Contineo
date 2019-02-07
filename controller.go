@@ -13,6 +13,7 @@ var WorkerUpdates chan map[string]interface{}
 // Slices to hold the current connections
 var Workers []*Worker
 
+const ErrorLimit = 50
 
 func main() {
 	WorkerUpdates = make(chan map[string]interface{})
@@ -20,7 +21,10 @@ func main() {
 	http.HandleFunc("/controller", handleConnection)
 
 	fmt.Println("Starting server. . .")
-	http.ListenAndServe(":3000",nil)
+	err := http.ListenAndServe(":3000",nil)
+	if err != nil {
+		fmt.Println("Error starting http server")
+	}
 
 }
 
@@ -30,6 +34,7 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 	 */
 
 	fmt.Println("Handling new connection, authorising...")
+
 	// First, handle authorisation
 	//token_type := r.Header.Get("token_type")
 	//token := r.Header.Get("token")
@@ -38,6 +43,7 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 	and a user id: this id must match the ID used within the workers to specify permissions.
 	Workers are authorised against the loaded worker data
 	 */
+
 	fmt.Println("Connection authorised.")
 	accessToken := "token"
 
@@ -64,7 +70,11 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var data map[string]interface{}
-	json.Unmarshal(msg, &data)
+	err = json.Unmarshal(msg, &data)
+	if err != nil {
+		fmt.Println("Error decoding connections initialisation packet, aborting")
+		return
+	}
 	// We now have the connections initialisation data
 
 	fmt.Print("Initialisation data: ")
@@ -78,18 +88,16 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 	default:
 		// Error and Disconnect
 	}
-
-
 }
 
-func RegisterWorker (conn *websocket.Conn, data *map[string]interface{}, token string, ) {
+func RegisterWorker(conn *websocket.Conn, data *map[string]interface{}, token string, ) {
 	/*
 	Method to register a new worker node with the controller
 	*/
 	if (*data)["type"] == "init" {
 		worker := Worker{connection:conn,data:*data,accessToken:token}
 		Workers = append(Workers, &worker)
-		sendAck(&worker)
+		sendRecvAcknowledgment(&worker)
 		go RecvWorkerData(&worker)
 		fmt.Println("New worker node connected")
 	} else {
@@ -97,7 +105,7 @@ func RegisterWorker (conn *websocket.Conn, data *map[string]interface{}, token s
 	}
 }
 
-func sendAck(worker *Worker) {
+func sendRecvAcknowledgment(worker *Worker) {
 	/*
 	Method to send an acknowledgement packet to a connections
 	*/
@@ -107,20 +115,51 @@ func sendAck(worker *Worker) {
 	}
 
 	jsonData, err := json.Marshal(resp)
+	err = (*worker).connection.WriteMessage(1, []byte(jsonData))
 	if err != nil {
 		fmt.Printf("Error sending ack packet to %v\n", (*worker). connection.RemoteAddr())
 	}
-	(*worker).connection.WriteMessage(1, []byte(jsonData))
-
-
 }
+
+/*
+Declaring errors
+ */
+type ContineoError int;
+
+const (
+	jsonDecodeError ContineoError = iota
+	unauthorised
+)
+
+func sendError(worker *Worker, code ContineoError) {
+	/*
+	Method to send an error packet to a connection.
+	*/
+	resp := map[string]interface{}{
+		"origin": "controller",
+		"type": "error",
+		"code": code,
+	}
+
+	jsonData, err := json.Marshal(resp)
+	err = (*worker).connection.WriteMessage(1, []byte(jsonData))
+	if err != nil {
+		fmt.Printf("Error sending ack packet to %v\n", (*worker). connection.RemoteAddr())
+	}
+}
+
 
 func RecvWorkerData (worker *Worker) {
 	/*
 	Method to loop and pull data from the worker connections. A new goroutine is spawned for each connection.
 	*/
 
+	// Interface object to load json data into
+	var data map[string]interface{}
+
 	for {
+
+		// Check the error count
 
 		fmt.Printf("Waiting for data from... %v\n", (*worker).connection.RemoteAddr())
 
@@ -135,7 +174,7 @@ func RecvWorkerData (worker *Worker) {
 		with you, not entirely sure what this means, but I know that it works and that's how I can access JSON data
 		without having to specifically declare what values it contains.
 		 */
-		var data map[string]interface{}
+
 		json.Unmarshal(msg, &data)
 		/*
 		"Unmarshal" means convert from json string to object. It takes the string and a pointer to the above string
@@ -143,7 +182,7 @@ func RecvWorkerData (worker *Worker) {
 		 */
 
 		 // Send an ack to the client
-		 sendAck(worker)
+		 sendRecvAcknowledgment(worker)
 
 		// TODO: Ensure acccess token in packet matches stored token
 		WorkerUpdates <- data
