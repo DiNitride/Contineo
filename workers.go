@@ -106,4 +106,5 @@ type Worker struct {
 	accessToken string
 	workerID string
 	data map[string]interface{}
+	errorCount int
 }
