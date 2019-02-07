@@ -4,7 +4,7 @@ import random
 import string
 import json
 
-key = "37826b43ee654151b982164501a1cd60"
+key = "worker_test"
 
 data = {
     "latency": 0,
@@ -21,13 +21,13 @@ def refresh():
 
 async def main():
     refresh()
-    ws = await websockets.connect("ws://localhost:3000/controller")
+    ws = await websockets.connect("ws://localhost:3000/controller", extra_headers=[("conn_type", "worker")])
 
     # Send init data
     await ws.send(json.dumps({
         "origin": "worker",
         "type": "init",
-        "key": key,
+        "init_token": "worker_test",
         "data": data
     }))
 
