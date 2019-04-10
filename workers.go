@@ -3,9 +3,10 @@ package main
 import "github.com/gorilla/websocket"
 
 type Worker struct {
-	connection *websocket.Conn
-	workerID   string
-	data       map[string]interface{}
+	connection 	*websocket.Conn
+	workerID   	string
+	workerKey	string
+	data       	map[string]interface{}
 }
 
 //package main
@@ -47,7 +48,7 @@ type Worker struct {
 //		}
 //	}
 //}
-//
+// 
 //func PrintWorkers() {
 //	for id, worker := range Workers {
 //		fmt.Printf("ID: %v Game: %v Gamemode: %v\n", id, worker.Game, worker.Gamemode)

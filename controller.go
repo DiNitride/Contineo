@@ -77,7 +77,6 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Error json decoding authentication server response")
 		}
 
-		fmt.Println("Connection authorised.")
 		accessToken = authResponse["access_token"].(string)
 		if accessToken == "unauthorised" {
 			fmt.Println("Invalid athentication token!")
@@ -86,6 +85,7 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Access token is: %s\n", accessToken)
 	} else if connectionType == "worker" {
 		// Yeet
+		// This should load from the workers 
 		fmt.Println("Worker!")
 		accessToken = "worker_test"
 	} else {
